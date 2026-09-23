@@ -1,5 +1,7 @@
 # Character.AU
 
+[Visit Character.AU](https://jooshiesaur.github.io/Character-AU/)
+
 **Character.AU** is a custom-built, completely free web application designed for crafting unique characters and guiding their stories through manual, user-driven roleplay.
 
 Popular AI chatbot platforms can be frustrating when you are forced to endlessly "reroll" a response just to get the exact dialogue or action you want. Character.AU takes away the RNG by putting you completely in control; since **you type out every message yourself!**
