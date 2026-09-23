@@ -1,0 +1,21 @@
+{
+  "id": "proj_1790185139243",
+  "title": "Welcome",
+  "characters": [
+    {
+      "id": "char_1790185146207",
+      "name": "Greeter",
+      "avatar": "",
+      "color": "#42fbff"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_1790185352408",
+      "characterId": "char_1790185146207",
+      "text": "Welcome to Character.au! This is a brand-new website developed by Jooshiesaur. To get started and message me, just select \"Add character\" and add a character that fits you. Instead of using AI, this site allows the *user* to type out every single message, allowing for complete customization. Have fun, and thanks for trying this out!",
+      "timestamp": 1790185352408
+    }
+  ],
+  "updatedAt": 1790185352408
+}
