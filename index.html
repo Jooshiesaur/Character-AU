@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character.au</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- LEFT: project + character rail -->
+    <aside class="rail">
+      <div class="rail-header">
+        <span class="wordmark">Character.au</span>
+        <button id="theme-toggle-btn" class="theme-toggle" title="Toggle dark mode">🌙</button>
+      </div>
+
+      <div class="rail-section rail-section-stories">
+        <div class="rail-section-label">Stories</div>
+        <button id="new-project-btn" class="btn-add-character">+ New story</button>
+        <div id="project-list" class="project-list"></div>
+      </div>
+
+      <div class="rail-section">
+        <div class="rail-section-label">Cast</div>
+        <div id="character-list" class="character-list"></div>
+        <button id="add-character-btn" class="btn-add-character">+ Add character</button>
+      </div>
+
+      <div class="rail-section">
+        <button id="export-btn" class="btn-ghost">Export story (.json)</button>
+        <button id="import-btn" class="btn-ghost">Import story</button>
+        <input type="file" id="import-input" accept=".json" hidden>
+      </div>
+    </aside>
+
+    <!-- RIGHT: the story feed -->
+    <main class="stage">
+      <header class="stage-header">
+        <h1 id="story-title" title="Double-click to rename">Untitled Story</h1>
+      </header>
+
+      <div id="feed" class="feed"></div>
+
+      <footer class="composer">
+        <div id="speaker-tabs" class="speaker-tabs"></div>
+        <div class="composer-input-row">
+          <img id="composer-avatar" class="composer-avatar" alt="">
+          <textarea id="composer-text" class="composer-text" placeholder="Write this line…" rows="1"></textarea>
+          <button id="send-btn" class="btn-send">Send</button>
+        </div>
+      </footer>
+    </main>
+
+  </div>
+
+  <!-- Simple modal for adding/editing a character -->
+  <div id="character-modal" class="modal hidden">
+    <div class="modal-card">
+      <h2 id="modal-title">New character</h2>
+      <label class="field-label">Name</label>
+      <input id="char-name-input" class="field-input" type="text" maxlength="30">
+
+      <label class="field-label">Avatar</label>
+      <div class="avatar-upload-row">
+        <img id="char-avatar-preview" class="avatar-preview" alt="">
+        <button id="upload-avatar-btn" class="btn-ghost" type="button">Upload image</button>
+        <input type="file" id="avatar-file-input" accept="image/*" hidden>
+      </div>
+
+      <label class="field-label">Bubble color</label>
+      <input id="char-color-input" class="field-color" type="color" value="#42fbff">
+
+      <div class="modal-actions">
+        <button id="modal-cancel-btn" class="btn-ghost">Cancel</button>
+        <button id="modal-save-btn" class="btn-primary">Save character</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Crop/zoom modal shown right after picking an image file -->
+  <div id="crop-modal" class="modal hidden">
+    <div class="modal-card crop-card">
+      <h2>Adjust image</h2>
+      <div id="crop-viewport" class="crop-viewport">
+        <img id="crop-image" class="crop-image" alt="">
+      </div>
+      <input type="range" id="crop-zoom" class="crop-zoom" min="0" max="1" step="0.01" value="0">
+      <div class="modal-actions">
+        <button id="crop-cancel-btn" class="btn-ghost">Cancel</button>
+        <button id="crop-save-btn" class="btn-primary">Use photo</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
