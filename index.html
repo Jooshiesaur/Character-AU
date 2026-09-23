@@ -8,55 +8,110 @@
 </head>
 <body>
 
-  <div class="app">
-
-    <!-- LEFT: project + character rail -->
-    <aside class="rail">
-      <div class="rail-header">
+  <!-- ======================= HOME VIEW ======================= -->
+  <div id="home-view" class="view">
+    <div class="home-content">
+      <div class="home-brand">
         <span class="wordmark">Character.au</span>
-        <button id="theme-toggle-btn" class="theme-toggle" title="Toggle dark mode">🌙</button>
+        <p class="home-tagline">Write both sides, own every word.</p>
       </div>
 
-      <div class="rail-section rail-section-stories">
-        <div class="rail-section-label">Stories</div>
-        <button id="new-project-btn" class="btn-add-character">+ New story</button>
-        <div id="project-list" class="project-list"></div>
-      </div>
-
-      <div class="rail-section">
-        <div class="rail-section-label">Cast</div>
-        <div id="character-list" class="character-list"></div>
-        <button id="add-character-btn" class="btn-add-character">+ Add character</button>
-      </div>
-
-      <div class="rail-section">
-        <button id="export-btn" class="btn-ghost">Export story (.json)</button>
-        <button id="import-btn" class="btn-ghost">Import story</button>
-        <input type="file" id="import-input" accept=".json" hidden>
-      </div>
-    </aside>
-
-    <!-- RIGHT: the story feed -->
-    <main class="stage">
-      <header class="stage-header">
-        <h1 id="story-title" title="Double-click to rename">Untitled Story</h1>
-      </header>
-
-      <div id="feed" class="feed"></div>
-
-      <footer class="composer">
-        <div id="speaker-tabs" class="speaker-tabs"></div>
-        <div class="composer-input-row">
-          <img id="composer-avatar" class="composer-avatar" alt="">
-          <textarea id="composer-text" class="composer-text" placeholder="Write this line…" rows="1"></textarea>
-          <button id="send-btn" class="btn-send">Send</button>
+      <section class="home-section">
+        <div class="home-section-header">
+          <h2>Chats</h2>
+          <div class="home-section-actions">
+            <button class="icon-btn home-search-toggle" data-target="chats" title="Search chats">🔍</button>
+            <button id="home-new-chat-btn" class="btn-ghost">+ New chat</button>
+          </div>
         </div>
-      </footer>
-    </main>
+        <input type="text" id="home-chats-search" class="home-search-input hidden" placeholder="Search chats…">
+        <div id="home-chats-scroll" class="home-scroll"></div>
+      </section>
 
+      <section class="home-section">
+        <div class="home-section-header">
+          <h2>Characters</h2>
+          <div class="home-section-actions">
+            <button class="icon-btn home-search-toggle" data-target="characters" title="Search characters">🔍</button>
+            <button id="home-new-character-btn" class="btn-ghost">+ New character</button>
+          </div>
+        </div>
+        <input type="text" id="home-characters-search" class="home-search-input hidden" placeholder="Search characters…">
+        <div id="home-characters-scroll" class="home-scroll"></div>
+      </section>
+    </div>
   </div>
 
-  <!-- Simple modal for adding/editing a character -->
+  <!-- ======================= CHAT VIEW ======================= -->
+  <div id="chat-view" class="view hidden">
+    <div class="app">
+
+      <aside class="rail">
+        <div class="rail-header">
+          <button id="go-home-btn" class="wordmark wordmark-btn" title="Back to home">Character.au</button>
+        </div>
+
+        <div class="rail-section rail-section-stories">
+          <div class="rail-section-label">Stories</div>
+          <button id="new-project-btn" class="btn-add-character">+ New story</button>
+          <div id="project-list" class="project-list"></div>
+        </div>
+
+        <div class="rail-section">
+          <div class="rail-section-label">Cast</div>
+          <div id="character-list" class="character-list"></div>
+          <button id="add-character-btn" class="btn-add-character">+ Add character</button>
+        </div>
+
+        <div class="rail-section">
+          <button id="export-btn" class="btn-ghost">Export story (.json)</button>
+          <button id="import-btn" class="btn-ghost">Import story</button>
+          <input type="file" id="import-input" accept=".json" hidden>
+        </div>
+      </aside>
+
+      <main class="stage">
+        <header class="stage-header">
+          <h1 id="story-title" title="Double-click to rename">Untitled Story</h1>
+          <button id="rename-story-btn" class="icon-btn" title="Rename story">✏️</button>
+        </header>
+
+        <div id="feed" class="feed"></div>
+
+        <footer class="composer">
+          <div id="speaker-tabs" class="speaker-tabs"></div>
+          <div class="composer-input-row">
+            <img id="composer-avatar" class="composer-avatar" alt="">
+            <textarea id="composer-text" class="composer-text" placeholder="Write this line…" rows="1"></textarea>
+            <button id="send-btn" class="btn-send">Send</button>
+          </div>
+        </footer>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- ======================= ABOUT VIEW ======================= -->
+  <div id="about-view" class="view hidden">
+    <div class="about-content">
+      <h1>About Character.au</h1>
+
+      <!-- ====== Edit the text below to change the About page ====== -->
+      <p class="about-text">This site is currently under construction! Thanks for trying it out early.</p>
+      <a class="about-link" href="https://github.com/Jooshiesaur/Character-AU" target="_blank" rel="noopener">GitHub page.</a>
+      <!-- ====== end editable section ====== -->
+
+      <button id="about-back-btn" class="btn-ghost about-back">Back</button>
+    </div>
+  </div>
+
+  <!-- ======================= GLOBAL FIXED CONTROLS ======================= -->
+  <button id="theme-toggle-btn" class="fixed-control theme-toggle" title="Toggle dark mode">🌙</button>
+  <button id="about-btn" class="fixed-control about-fab" title="About">ⓘ About</button>
+
+  <!-- ======================= MODALS ======================= -->
+
+  <!-- Add/edit character -->
   <div id="character-modal" class="modal hidden">
     <div class="modal-card">
       <h2 id="modal-title">New character</h2>
@@ -73,9 +128,12 @@
       <label class="field-label">Bubble color</label>
       <input id="char-color-input" class="field-color" type="color" value="#42fbff">
 
-      <div class="modal-actions">
-        <button id="modal-cancel-btn" class="btn-ghost">Cancel</button>
-        <button id="modal-save-btn" class="btn-primary">Save character</button>
+      <div class="modal-actions modal-actions-split">
+        <button id="char-delete-btn" class="btn-danger hidden">Delete character</button>
+        <div class="modal-actions-right">
+          <button id="modal-cancel-btn" class="btn-ghost">Cancel</button>
+          <button id="modal-save-btn" class="btn-primary">Save character</button>
+        </div>
       </div>
     </div>
   </div>
@@ -91,6 +149,62 @@
       <div class="modal-actions">
         <button id="crop-cancel-btn" class="btn-ghost">Cancel</button>
         <button id="crop-save-btn" class="btn-primary">Use photo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New chat -->
+  <div id="new-chat-modal" class="modal hidden">
+    <div class="modal-card new-chat-card">
+      <h2>New chat</h2>
+      <label class="field-label">Title</label>
+      <input id="new-chat-title-input" class="field-input" type="text" placeholder="Untitled Story">
+
+      <label class="field-label">Add existing characters</label>
+      <div id="new-chat-character-list" class="new-chat-character-list"></div>
+      <button id="new-chat-create-character-btn" class="btn-add-character" type="button">+ Create new character</button>
+
+      <div class="modal-actions">
+        <button id="new-chat-cancel-btn" class="btn-ghost">Cancel</button>
+        <button id="new-chat-create-btn" class="btn-primary">Create chat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generic text-input prompt (replaces window.prompt) -->
+  <div id="prompt-modal" class="modal hidden">
+    <div class="modal-card">
+      <h2 id="prompt-modal-title">Rename</h2>
+      <input id="prompt-modal-input" class="field-input" type="text">
+      <div class="modal-actions">
+        <button id="prompt-modal-cancel" class="btn-ghost">Cancel</button>
+        <button id="prompt-modal-ok" class="btn-primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generic confirmation (replaces window.confirm), with optional "don't ask again" -->
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-card">
+      <h2 id="confirm-modal-title">Are you sure?</h2>
+      <p id="confirm-modal-message"></p>
+      <label id="confirm-modal-dontask-wrap" class="checkbox-row hidden">
+        <input type="checkbox" id="confirm-modal-dontask">
+        Don't ask again (until page reload)
+      </label>
+      <div class="modal-actions">
+        <button id="confirm-modal-cancel" class="btn-ghost">Cancel</button>
+        <button id="confirm-modal-ok" class="btn-primary">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generic notice (replaces window.alert) -->
+  <div id="alert-modal" class="modal hidden">
+    <div class="modal-card">
+      <p id="alert-modal-message"></p>
+      <div class="modal-actions">
+        <button id="alert-modal-ok" class="btn-primary">OK</button>
       </div>
     </div>
   </div>
