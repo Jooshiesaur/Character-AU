@@ -8,6 +8,8 @@ Popular AI chatbot platforms can be frustrating when you are forced to endlessly
 
 The **AU** in the name stands for **Alternate Universe**, but it also means **And You**. Because the real creativity isn't in the computer; it's in the user.
 
+Updates will be released every Sunday.
+
 ---
 
 ### Features
