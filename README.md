@@ -22,38 +22,38 @@ Updates will be released every Sunday.
 
 # Changelog
 
-## Version 0.2.0
+## Version 0.3.0
 
-A massive quality-of-life and UI expansion update introducing custom modals, brand new home navigation, and deep customization features for the site.
+A focused polish, quality-of-life, and bug-fix update introducing architectural groundwork for future animations, enhanced navigation, and smoother content management.
 
-### New Features & UI Upgrades
+### New Features & Improvements
 
-* **Custom In-Site Modals:** Replaced browser popups with sleek, custom-built modals for all input UI (native OS-level color and file pickers remain unchanged).
-* **Brand New Home Page:** Added a dynamic landing page featuring horizontal-scrolling **Chats** and **Characters** sections, expandable search/filter icons, and quick-access `+` buttons for empty states.
-* **Global Wordmark Navigation:** The Character.AU wordmark is now clickable from anywhere on the site to take you back home.
-* **Enhanced Chat & Character Management:**
-* Added pencil icons for quick character editing and chat renaming across sidebars and home cards.
-* Added a delete message button with a session-based "don't ask again" confirmation toggle (resets on page reload).
-* Character deletion: deleting a character from the edit modal keeps their past dialogue in existing stories, relabeling them cleanly as "Deleted Character."
-* Deleting the active chat automatically returns you to the home page.
+* **Favicon:** Added a custom browser tab icon for Character.AU.
+* **Global Text Shadows:** Consolidated text shadows into a single global rule that inherits cleanly across nearly all text on the site.
+* **Reverse-Chronological Sorting:** Updated the home page and "add existing" character pickers to display the newest characters first.
+* **Inline Character Management in Chats:**
+* Added a brand-new "Add existing" button directly into the Cast section to add characters to an already-open chat.
+* Clicking a character who is already in an active chat now automatically switches that chat to their perspective.
 
 
-* **Improved Chat Creation:** New chat creation now includes a full checklist of existing characters plus an inline shortcut to create brand-new ones.
-* **Smart Character Shortcuts:** Clicking a standalone character card creates a new chat with them, while clicking a character already in an active story jumps you straight to their most recent chat.
-* **Dynamic Bubble Text Contrast:** Message bubble text color now automatically and dynamically switches between near-black and white based on the bubble's individual background color, ensuring 100% readability paired with stronger drop shadows.
-* **UI & Typography Polish:**
-* Applied the **'Cause'** font site-wide, including the main wordmark.
-* Fixed dark-mode contrast issues on name inputs.
-* The image zoom tool now anchors cleanly to the center instead of the top-left corner.
-* Edit-message boxes now auto-grow dynamically to fit text instead of using a fixed, cramped frame.
+* **Drag-to-Reorder Cast:** Enabled native drag-and-drop functionality directly on the character chips.
+* **About Page Updates:** The back button has been moved to the top-left and enlarged, and a new version marker (CharacterAU V0.3) has been added.
+* **Accessibility & UI Fixes:**
+* Fixed home card hover clipping issues.
+* Enabled scroll-wheel navigation on home menus and resolved the dark-mode scrollbar background bugs.
+* Added an import button directly onto the home page above the chat list, making it accessible even when you have zero chats.
 
 
-* **About Page:** Added a clean info page noting the current early-access status and a direct link to the GitHub repository.
+* **Animation Groundwork:** Implemented shared timing tokens and smooth opacity transitions for icon buttons, laying down the structural foundation for the upcoming animation overhaul.
+
+### Bug Fixes
+
+* **New Chat Character Creation Bug:** Fixed the stacking order for nested modals. The "create new character" button within the new chat menu now correctly renders on top and successfully adds the newly created character to the story.
 
 ---
 
-### 🐛 Known Bugs (to be fixed in V0.3)
+### 🐛 Known Bugs
 
-* **Inline Character Creation Bug:** When creating a new chat, clicking the "create new character" button opens the character creation menu *behind* the chat creation menu. This requires you to finish making the story first and add the character afterward; additionally, the inline creation flow currently fails to properly attach the newly made character to the story. *(Fix coming in V0.3!)*
+* **None**
 
 ---
