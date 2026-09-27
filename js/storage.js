@@ -65,6 +65,19 @@ function ensureMigrated() {
     if (!project.characterIds) project.characterIds = [];
   });
 
+  // Backfill createdAt on any character saved before this field existed, so
+  // "newest first" sorting has something to work with. Object key order
+  // roughly reflects original creation order, so this assigns small
+  // increasing fake timestamps (guaranteed lower than any real Date.now())
+  // to preserve their relative order at the back of the "newest first" list.
+  let fakeTimestamp = 1;
+  Object.values(characters).forEach(c => {
+    if (!c.createdAt) {
+      c.createdAt = fakeTimestamp++;
+      changed = true;
+    }
+  });
+
   if (changed) {
     writeJSON(PROJECT_KEY, projects);
     writeJSON(CHAR_KEY, characters);

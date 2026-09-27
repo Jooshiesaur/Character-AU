@@ -10,10 +10,19 @@
   --accent-soft: #DDFCFD;
   --on-accent: #063638;      /* fixed dark ink for text sitting on the bright accent background */
   --shadow: rgba(20, 18, 15, 0.35);
+  --text-shadow: 0 1px 2px rgba(20, 18, 15, 0.28);
   --danger: #C24B43;
   --danger-soft: rgba(194, 75, 67, 0.12);
   --input-bg: #FFFFFF;
   --radius: 10px;
+
+  /* Timing/easing tokens for the animation pass planned in a future update.
+     Not used everywhere yet — the hover-fade transitions added this round
+     already reference them, and openModal()/closeModal()/switchView() in
+     app.js are the intended hook points for slide/transition work later. */
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body.dark-mode {
@@ -25,6 +34,7 @@ body.dark-mode {
   --accent: #42FBFF;
   --accent-soft: #123638;
   --shadow: rgba(0, 0, 0, 0.6);
+  --text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
   --input-bg: #2C2A26;
 }
 
@@ -32,11 +42,23 @@ body.dark-mode {
 
 .hidden { display: none !important; }
 
+/* Dark-mode-aware scrollbars everywhere, instead of the browser default
+   (which stays light even when the rest of the page is dark). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) var(--paper-raised);
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: var(--paper-raised); }
+*::-webkit-scrollbar-thumb { background: var(--line); border-radius: 6px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--ink-soft); }
+
 body {
   margin: 0;
   font-family: 'Cause', sans-serif;
   color: var(--ink);
   background: var(--paper);
+  text-shadow: var(--text-shadow); /* inherits to nearly all text on the site */
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
@@ -146,7 +168,10 @@ button, input, textarea { font-family: 'Cause', sans-serif; }
   display: flex;
   gap: 14px;
   overflow-x: auto;
-  padding-bottom: 10px;
+  padding: 6px 2px 10px;
+  /* padding-top matters here: setting overflow-x:auto implicitly makes
+     overflow-y 'auto' too (a CSS quirk), so without this the hover-lift
+     transform on .home-card below got clipped at the top edge. */
 }
 
 .home-empty-cta {
@@ -227,6 +252,7 @@ button, input, textarea { font-family: 'Cause', sans-serif; }
   font-size: 11px;
   cursor: pointer;
   opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
 .home-card:hover .card-icon-btn { opacity: 1; }
 .home-card .card-edit-btn { right: 32px; }
@@ -240,6 +266,7 @@ button, input, textarea { font-family: 'Cause', sans-serif; }
   align-items: center;
   justify-content: center;
   background: var(--paper);
+  position: relative;
 }
 .about-content {
   max-width: 420px;
@@ -254,7 +281,19 @@ button, input, textarea { font-family: 'Cause', sans-serif; }
   text-decoration: none;
 }
 .about-link:hover { text-decoration: underline; }
-.about-back { margin-top: 28px; }
+.about-version {
+  color: var(--ink-soft);
+  font-size: 12px;
+  margin-top: 32px;
+  opacity: 0.8;
+}
+.about-back {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  font-size: 16px;
+  padding: 10px 18px;
+}
 
 /* ---------- CHAT VIEW / APP SHELL ---------- */
 .app { display: flex; height: 100vh; }
@@ -329,6 +368,7 @@ button, input, textarea { font-family: 'Cause', sans-serif; }
   cursor: pointer;
   padding: 3px 5px;
   border-radius: 4px;
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
 .project-item:hover .row-icon-btn { opacity: 1; }
 .project-item .row-edit-btn:hover { color: var(--accent); }
@@ -402,11 +442,13 @@ button, input, textarea { font-family: 'Cause', sans-serif; }
   gap: 8px;
   padding: 6px 8px;
   border-radius: var(--radius);
-  cursor: pointer;
+  cursor: grab;
   border: 1px solid transparent;
 }
 .character-chip:hover { background: var(--accent-soft); }
 .character-chip.active { border-color: var(--accent); background: var(--accent-soft); }
+.character-chip.dragging { opacity: 0.4; }
+.character-chip.drag-over { border-color: var(--accent); border-style: dashed; }
 
 .character-chip img {
   width: 26px; height: 26px;
@@ -426,6 +468,7 @@ button, input, textarea { font-family: 'Cause', sans-serif; }
   cursor: pointer;
   padding: 3px 5px;
   border-radius: 4px;
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
 .character-chip:hover .row-icon-btn { opacity: 1; }
 .character-chip .row-icon-btn:hover { color: var(--accent); }
@@ -502,6 +545,7 @@ button, input, textarea { font-family: 'Cause', sans-serif; }
   cursor: pointer;
   font-size: 12px;
   padding: 3px;
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
 .message-row:hover .edit-btn,
 .message-row:hover .delete-btn { opacity: 1; }
@@ -656,6 +700,16 @@ button, input, textarea { font-family: 'Cause', sans-serif; }
   z-index: 30;
 }
 .modal.hidden { display: none; }
+
+/* Some modals can be opened from WITHIN another modal (e.g. "+ Create new
+   character" from inside the New Chat modal, or the image cropper from
+   inside the character modal). Stacking order used to just follow source
+   order in the HTML, which meant the character modal could render BEHIND
+   the new-chat modal and swallow no clicks at all — a real bug, not just
+   visual. Explicit tiers fix this regardless of markup order. */
+#character-modal { z-index: 31; }
+#crop-modal { z-index: 32; }
+#prompt-modal, #confirm-modal, #alert-modal { z-index: 33; }
 
 .modal-card {
   background: var(--paper-raised);

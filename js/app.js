@@ -20,6 +20,17 @@ let state = {
 // confirmation back, exactly as requested.
 const sessionSkipConfirm = new Set();
 
+// Every modal opens/closes through these two functions instead of touching
+// classList directly. This is groundwork for the animation pass planned in
+// a future update — enter/exit transitions (fade, slide, whatever's decided)
+// only need to be added HERE once, rather than at every call site.
+function openModal(id) {
+  document.getElementById(id).classList.remove("hidden");
+}
+function closeModal(id) {
+  document.getElementById(id).classList.add("hidden");
+}
+
 // ---------- INIT ----------
 
 function init() {
@@ -31,6 +42,8 @@ function init() {
 // ---------- VIEW ROUTING ----------
 
 function switchView(view) {
+  // Another intended hook point for the next update's page-transition work —
+  // whatever enters/leaves here is currently an instant show/hide.
   state.view = view;
   document.getElementById("home-view").classList.toggle("hidden", view !== "home");
   document.getElementById("chat-view").classList.toggle("hidden", view !== "chat");
@@ -49,10 +62,11 @@ function showAbout() {
   switchView("about");
 }
 
-function openProject(project) {
+function openProject(project, preferredSpeakerId = null) {
   state.project = project;
   const cast = Storage.getCharactersForProject(project);
-  state.activeSpeakerId = cast[0]?.id || null;
+  const wanted = preferredSpeakerId && cast.some(c => c.id === preferredSpeakerId);
+  state.activeSpeakerId = wanted ? preferredSpeakerId : (cast[0]?.id || null);
   Storage.setActiveProjectId(project.id);
   switchView("chat");
   renderChatView();
@@ -106,7 +120,7 @@ function renderHomeChats(searchTerm = "") {
 
 function renderHomeCharacters(searchTerm = "") {
   const container = document.getElementById("home-characters-scroll");
-  const all = Object.values(Storage.getAllCharacters());
+  const all = sortNewestFirst(dedupeCharactersByContent(Object.values(Storage.getAllCharacters())));
   container.innerHTML = "";
 
   if (all.length === 0) {
@@ -135,14 +149,15 @@ function renderHomeCharacters(searchTerm = "") {
       <button class="card-icon-btn card-delete-btn" title="Delete">✕</button>
     `;
     // Clicking the card itself: standalone characters start a brand-new chat;
-    // characters already in a chat jump straight to (one of) that chat.
+    // characters already in a chat jump straight to (one of) that chat AND
+    // switch that chat's perspective to this character automatically.
     card.addEventListener("click", () => {
       if (Storage.isCharacterStandalone(c.id)) {
         const project = Storage.createProject("New Chat", [c.id]);
-        openProject(project);
+        openProject(project, c.id);
       } else {
         const project = Storage.findProjectForCharacter(c.id);
-        if (project) openProject(project);
+        if (project) openProject(project, c.id);
       }
     });
     card.querySelector(".card-edit-btn").addEventListener("click", e => {
@@ -155,6 +170,28 @@ function renderHomeCharacters(searchTerm = "") {
     });
     container.appendChild(card);
   });
+}
+
+// Newest-created characters first, wherever a menu lists them freely
+// (i.e. not already ordered by something more specific, like a chat's
+// own drag-reordered cast).
+function sortNewestFirst(characters) {
+  return [...characters].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+// If the same-looking character exists more than once (e.g. from importing
+// the same story twice, which always mints fresh ids), only show it once in
+// a picker list — matched by name + avatar + color, not id.
+function dedupeCharactersByContent(characters) {
+  const seen = new Set();
+  const result = [];
+  characters.forEach(c => {
+    const signature = `${c.name}__${c.avatar}__${c.color}`;
+    if (seen.has(signature)) return;
+    seen.add(signature);
+    result.push(c);
+  });
+  return result;
 }
 
 function makeEmptyCta(label, onClick) {
@@ -185,6 +222,17 @@ function bindHomeSearchToggles() {
   document.getElementById("home-characters-search").addEventListener("input", e => renderHomeCharacters(e.target.value));
 }
 
+function bindHomeWheelScroll() {
+  ["home-chats-scroll", "home-characters-scroll"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("wheel", e => {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY; // scrolling down moves the row right
+    }, { passive: false });
+  });
+}
+
 // ================================================================
 // NEW CHAT MODAL (title + pick existing characters + create new ones)
 // ================================================================
@@ -195,17 +243,17 @@ function openNewChatModal() {
   pendingNewChatCharacterIds = new Set();
   document.getElementById("new-chat-title-input").value = "";
   renderNewChatCharacterList();
-  document.getElementById("new-chat-modal").classList.remove("hidden");
+  openModal("new-chat-modal");
   document.getElementById("new-chat-title-input").focus();
 }
 
 function closeNewChatModal() {
-  document.getElementById("new-chat-modal").classList.add("hidden");
+  closeModal("new-chat-modal");
 }
 
 function renderNewChatCharacterList() {
   const container = document.getElementById("new-chat-character-list");
-  const all = Object.values(Storage.getAllCharacters());
+  const all = sortNewestFirst(dedupeCharactersByContent(Object.values(Storage.getAllCharacters())));
   container.innerHTML = "";
 
   if (all.length === 0) {
@@ -234,6 +282,69 @@ function createChatFromModal() {
   const project = Storage.createProject(title, [...pendingNewChatCharacterIds]);
   closeNewChatModal();
   openProject(project);
+}
+
+// ================================================================
+// ADD EXISTING CHARACTER (to an already-open chat)
+// ================================================================
+
+let pendingAddExistingIds = new Set();
+
+function openAddExistingModal() {
+  pendingAddExistingIds = new Set();
+  renderAddExistingCharacterList();
+  openModal("add-existing-modal");
+}
+
+function closeAddExistingModal() {
+  closeModal("add-existing-modal");
+}
+
+function renderAddExistingCharacterList() {
+  const container = document.getElementById("add-existing-character-list");
+  const alreadyInCast = new Set(state.project.characterIds);
+  const candidates = sortNewestFirst(
+    dedupeCharactersByContent(Object.values(Storage.getAllCharacters()))
+  ).filter(c => !alreadyInCast.has(c.id));
+
+  container.innerHTML = "";
+  if (candidates.length === 0) {
+    container.innerHTML = `<div class="new-chat-char-empty">Every character you have is already in this chat.</div>`;
+    return;
+  }
+
+  candidates.forEach(c => {
+    const row = document.createElement("label");
+    row.className = "new-chat-char-row";
+    row.innerHTML = `
+      <input type="checkbox">
+      <img src="${c.avatar || placeholderAvatar(c.name)}" alt="">
+      <span>${escapeHtml(c.name)}</span>
+    `;
+    row.querySelector("input").addEventListener("change", e => {
+      if (e.target.checked) pendingAddExistingIds.add(c.id);
+      else pendingAddExistingIds.delete(c.id);
+    });
+    container.appendChild(row);
+  });
+}
+
+function confirmAddExisting() {
+  if (pendingAddExistingIds.size === 0) {
+    closeAddExistingModal();
+    return;
+  }
+  // Newly attached characters appear first in this chat's cast, same as a
+  // freshly created one — "newer" here means newer TO this chat.
+  state.project.characterIds.unshift(...pendingAddExistingIds);
+  if (!state.activeSpeakerId) {
+    state.activeSpeakerId = state.project.characterIds[0];
+  }
+  persist();
+  renderCharacterList();
+  renderSpeakerTabs();
+  renderFeed();
+  closeAddExistingModal();
 }
 
 // ================================================================
@@ -318,6 +429,8 @@ function renderCharacterList() {
   cast.forEach(char => {
     const chip = document.createElement("div");
     chip.className = "character-chip" + (char.id === state.activeSpeakerId ? " active" : "");
+    chip.draggable = true;
+    chip.dataset.charId = char.id;
     chip.innerHTML = `
       <img src="${char.avatar || placeholderAvatar(char.name)}" alt="">
       <span class="chip-name">${escapeHtml(char.name)}</span>
@@ -328,8 +441,45 @@ function renderCharacterList() {
       e.stopPropagation();
       openCharacterModal(char.id, "project");
     });
+
+    // Drag-to-reorder the cast. Native HTML5 drag-and-drop — no library
+    // needed for a simple same-list reorder like this.
+    chip.addEventListener("dragstart", e => {
+      draggedCastCharId = char.id;
+      chip.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    chip.addEventListener("dragend", () => chip.classList.remove("dragging"));
+    chip.addEventListener("dragover", e => {
+      e.preventDefault();
+      if (draggedCastCharId && draggedCastCharId !== char.id) chip.classList.add("drag-over");
+    });
+    chip.addEventListener("dragleave", () => chip.classList.remove("drag-over"));
+    chip.addEventListener("drop", e => {
+      e.preventDefault();
+      chip.classList.remove("drag-over");
+      if (draggedCastCharId && draggedCastCharId !== char.id) {
+        reorderCast(draggedCastCharId, char.id);
+      }
+      draggedCastCharId = null;
+    });
+
     list.appendChild(chip);
   });
+}
+
+let draggedCastCharId = null;
+
+function reorderCast(sourceId, targetId) {
+  const ids = state.project.characterIds;
+  const from = ids.indexOf(sourceId);
+  const to = ids.indexOf(targetId);
+  if (from === -1 || to === -1) return;
+  ids.splice(from, 1);
+  ids.splice(to, 0, sourceId);
+  persist();
+  renderCharacterList();
+  renderSpeakerTabs();
 }
 
 function renderSpeakerTabs() {
@@ -431,11 +581,11 @@ function openCharacterModal(charId, context) {
   document.getElementById("char-color-input").value = char?.color || "#42fbff";
   document.getElementById("char-avatar-preview").src = pendingAvatarDataUrl || placeholderAvatar(char?.name || "?");
   document.getElementById("char-delete-btn").classList.toggle("hidden", !charId);
-  document.getElementById("character-modal").classList.remove("hidden");
+  openModal("character-modal");
 }
 
 function closeCharacterModal() {
-  document.getElementById("character-modal").classList.add("hidden");
+  closeModal("character-modal");
 }
 
 function saveCharacterFromModal() {
@@ -446,13 +596,15 @@ function saveCharacterFromModal() {
   }
   const avatar = pendingAvatarDataUrl;
   const color = document.getElementById("char-color-input").value;
+  const existing = editingCharacterId ? Storage.getCharacter(editingCharacterId) : null;
   const charId = editingCharacterId || ("char_" + Date.now());
+  const createdAt = existing?.createdAt || Date.now();
 
-  Storage.saveCharacter({ id: charId, name, avatar, color });
+  Storage.saveCharacter({ id: charId, name, avatar, color, createdAt });
 
   if (characterModalContext === "project" && state.project) {
     if (!state.project.characterIds.includes(charId)) {
-      state.project.characterIds.push(charId);
+      state.project.characterIds.unshift(charId); // newest character shows first in the cast
     }
     if (!state.activeSpeakerId) state.activeSpeakerId = charId;
     persist();
@@ -574,11 +726,11 @@ function openCropModal(file) {
     img.src = reader.result;
   };
   reader.readAsDataURL(file);
-  document.getElementById("crop-modal").classList.remove("hidden");
+  openModal("crop-modal");
 }
 
 function closeCropModal() {
-  document.getElementById("crop-modal").classList.add("hidden");
+  closeModal("crop-modal");
   document.getElementById("avatar-file-input").value = "";
 }
 
@@ -842,11 +994,11 @@ function showPrompt(title, defaultValue, onOk) {
   document.getElementById("prompt-modal-title").textContent = title;
   const input = document.getElementById("prompt-modal-input");
   input.value = defaultValue || "";
-  document.getElementById("prompt-modal").classList.remove("hidden");
+  openModal("prompt-modal");
   input.focus();
   input.select();
 
-  const close = () => document.getElementById("prompt-modal").classList.add("hidden");
+  const close = () => closeModal("prompt-modal");
 
   document.getElementById("prompt-modal-ok").onclick = () => {
     const val = input.value.trim();
@@ -874,8 +1026,8 @@ function showConfirm(message, onOk, { allowDontAskAgain = false, dontAskKey = nu
   checkbox.checked = false;
   wrap.classList.toggle("hidden", !allowDontAskAgain);
 
-  document.getElementById("confirm-modal").classList.remove("hidden");
-  const close = () => document.getElementById("confirm-modal").classList.add("hidden");
+  openModal("confirm-modal");
+  const close = () => closeModal("confirm-modal");
 
   document.getElementById("confirm-modal-ok").onclick = () => {
     if (allowDontAskAgain && checkbox.checked && dontAskKey) {
@@ -889,8 +1041,8 @@ function showConfirm(message, onOk, { allowDontAskAgain = false, dontAskKey = nu
 
 function showAlert(message) {
   document.getElementById("alert-modal-message").textContent = message;
-  document.getElementById("alert-modal").classList.remove("hidden");
-  document.getElementById("alert-modal-ok").onclick = () => document.getElementById("alert-modal").classList.add("hidden");
+  openModal("alert-modal");
+  document.getElementById("alert-modal-ok").onclick = () => closeModal("alert-modal");
 }
 
 // ================================================================
@@ -929,6 +1081,21 @@ function bindStaticEvents() {
   document.getElementById("home-new-chat-btn").addEventListener("click", openNewChatModal);
   document.getElementById("home-new-character-btn").addEventListener("click", () => openCharacterModal(null, "standalone"));
   bindHomeSearchToggles();
+  bindHomeWheelScroll();
+
+  document.getElementById("home-import-chat-btn").addEventListener("click", () => {
+    document.getElementById("home-import-input").click();
+  });
+  document.getElementById("home-import-input").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    Storage.importProjectFromFile(
+      file,
+      project => openProject(project),
+      () => showAlert("That file doesn't look like a valid Character.au story.")
+    );
+    e.target.value = "";
+  });
 
   // Chat view navigation
   document.getElementById("go-home-btn").addEventListener("click", showHome);
@@ -940,6 +1107,11 @@ function bindStaticEvents() {
   document.getElementById("new-chat-cancel-btn").addEventListener("click", closeNewChatModal);
   document.getElementById("new-chat-create-btn").addEventListener("click", createChatFromModal);
   document.getElementById("new-chat-create-character-btn").addEventListener("click", () => openCharacterModal(null, "pending"));
+
+  // Add existing character (to an already-open chat)
+  document.getElementById("add-existing-character-btn").addEventListener("click", openAddExistingModal);
+  document.getElementById("add-existing-cancel-btn").addEventListener("click", closeAddExistingModal);
+  document.getElementById("add-existing-confirm-btn").addEventListener("click", confirmAddExisting);
 
   // Character modal
   document.getElementById("add-character-btn").addEventListener("click", () => openCharacterModal(null, "project"));
